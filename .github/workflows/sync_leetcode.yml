@@ -1,18 +1,33 @@
-name: LeetCode Synchronizer
+name: Sync LeetCode
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 18 * * *"
+    - cron: "*/30 * * * *"
 
 jobs:
-  build:
+  sync:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Run LeetCode Synchronizer
-        uses: dos-m0nk3y/LeetCode-Synchronizer@v1.1.0
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          GITHUB_TOKEN: ${{ github.token }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install glsync
+        run: go install github.com/ahmed-e-abdulaziz/glsync@latest
+
+      - name: Sync LeetCode submissions
+        env:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
-          LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          glsync \
+            -lc-cookie="$LEETCODE_SESSION" \
+            -repo-url="https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
